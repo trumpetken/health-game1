@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康知識小測驗</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .quiz-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-btn {
+            background-color: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .option-btn:hover {
+            background-color: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .option-btn.correct {
+            background-color: #2ecc71;
+            color: white;
+            border-color: #2ecc71;
+        }
+        .option-btn.wrong {
+            background-color: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+        }
+        #next-btn, #restart-btn {
+            background-color: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none;
+            transition: background-color 0.3s;
+        }
+        #next-btn:hover, #restart-btn:hover {
+            background-color: #1a252f;
+        }
+        .score-board {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <h1>🍎 健康知識小測驗</h1>
+    <div id="quiz-content">
+        <div class="question" id="question-text">題目載入中...</div>
+        <div class="options" id="options-container">
+            </div>
+        <button id="next-btn" onclick="nextQuestion()">下一題</button>
+    </div>
+    
+    <div id="result-content" style="display: none;">
+        <h2>測驗結束！</h2>
+        <p class="score-board">你的得分：<span id="score">0</span> / <span id="total-score">0</span></p>
+        <p id="feedback-message"></p>
+        <button id="restart-btn" onclick="restartQuiz()" style="display: inline-block;">重新測驗</button>
+    </div>
+</div>
+
+<script>
+    // 題庫設定 (您可以自由新增或修改題目)
+    const quizData = [
+        {
+            question: "一般成年人每天建議的理想睡眠時間大約是多久？",
+            options: ["4 到 5 小時", "7 到 9 小時", "10 到 12 小時", "看心情決定"],
+            answer: 1 // 正確答案的索引值 (從 0 開始)
+        },
+        {
+            question: "下列哪一個是計算 BMI（身體質量指數）的正確公式？",
+            options: ["體重(公斤) ÷ 身高(公尺)", "身高(公分) ÷ 體重(公斤)", "體重(公斤) ÷ 身高(公尺)的平方", "體重(公斤) × 身高(公尺)"],
+            answer: 2
+        },
+        {
+            question: "根據健康飲食建議，我們每天應攝取充足的水分。一般成年人一天大約需要喝多少水？",
+            options: ["約 500 毫升", "約 1000 毫升", "約 2000-2500 毫升", "約 5000 毫升"],
+            answer: 2
+        },
+        {
+            question: "規律的有氧運動（如慢跑、游泳）對人體的主要好處不包括下列哪一項？",
+            options: ["提升心肺功能", "促進新陳代謝", "增加近視風險", "協助控制體重"],
+            answer: 2
+        },
+        {
+            question: "衛福部國健署推廣的「我的餐盤」中，建議每餐攝取體積最多的食物類別應該是？",
+            options: ["豆魚蛋肉類", "水果類", "全穀雜糧類與蔬菜類", "乳品類"],
+            answer: 2
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const questionText = document.getElementById("question-text");
+    const optionsContainer = document.getElementById("options-container");
+    const nextBtn = document.getElementById("next-btn");
+    const quizContent = document.getElementById("quiz-content");
+    const resultContent = document.getElementById("result-content");
+    const scoreDisplay = document.getElementById("score");
+    const totalScoreDisplay = document.getElementById("total-score");
+    const feedbackMessage = document.getElementById("feedback-message");
+
+    // 載入題目
+    function loadQuestion() {
+        const currentQuizData = quizData[currentQuestionIndex];
+        questionText.textContent = `${currentQuestionIndex + 1}. ${currentQuizData.question}`;
+        
+        // 清空舊選項
+        optionsContainer.innerHTML = "";
+        nextBtn.style.display = "none";
+
+        // 動態產生選項按鈕
+        currentQuizData.options.forEach((option, index) => {
+            const button = document.createElement("button");
+            button.textContent = option;
+            button.classList.add("option-btn");
+            button.onclick = () => selectAnswer(index, button);
+            optionsContainer.appendChild(button);
+        });
+    }
+
+    // 選擇答案
+    function selectAnswer(selectedIndex, selectedButton) {
+        const currentQuizData = quizData[currentQuestionIndex];
+        const allButtons = optionsContainer.querySelectorAll(".option-btn");
+        
+        // 停用所有按鈕，防止重複點擊
+        allButtons.forEach(btn => btn.disabled = true);
+
+        // 判斷對錯並加上顏色樣式
+        if (selectedIndex === currentQuizData.answer) {
+            selectedButton.classList.add("correct");
+            score++;
+        } else {
+            selectedButton.classList.add("wrong");
+            // 標示出正確答案
+            allButtons[currentQuizData.answer].classList.add("correct");
+        }
+
+        // 顯示「下一題」按鈕
+        nextBtn.style.display = "inline-block";
+    }
+
+    // 進入下一題或結算
+    function nextQuestion() {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            loadQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    // 顯示測驗結果
+    function showResult() {
+        quizContent.style.display = "none";
+        resultContent.style.display = "block";
+        scoreDisplay.textContent = score;
+        totalScoreDisplay.textContent = quizData.length;
+
+        // 給予回饋評語
+        const percentage = score / quizData.length;
+        if (percentage === 1) {
+            feedbackMessage.textContent = "太厲害了！你是健康知識大師！🌟";
+        } else if (percentage >= 0.6) {
+            feedbackMessage.textContent = "表現不錯喔！繼續保持健康的生活習慣！💪";
+        } else {
+            feedbackMessage.textContent = "再接再厲！多吸收健康知識對身體很有幫助喔！📚";
+        }
+    }
+
+    // 重新開始測驗
+    function restartQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        resultContent.style.display = "none";
+        quizContent.style.display = "block";
+        loadQuestion();
+    }
+
+    // 初始化第一題
+    loadQuestion();
+
+</script>
+
+</body>
+</html>
