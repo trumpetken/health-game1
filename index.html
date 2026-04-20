@@ -3,234 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>健康知識小測驗</title>
+    <title>健康偵探：大學生昏迷事件簿</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f8ff;
-            color: #333;
+            font-family: "Microsoft JhengHei", sans-serif;
+            background-color: #1e1e2f;
+            color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
         }
-        .quiz-container {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-            padding: 30px;
+        #game-container {
+            background-color: #2a2a40;
             width: 90%;
-            max-width: 500px;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             text-align: center;
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
+        h1, h2 {
+            color: #4da6ff;
         }
-        .question {
-            font-size: 1.2em;
+        .story-text {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            text-align: left;
+            padding: 15px;
+            background-color: #3b3b5c;
+            border-left: 5px solid #4da6ff;
+            border-radius: 5px;
+        }
+        .question-text {
+            font-size: 1.3rem;
             margin-bottom: 20px;
             font-weight: bold;
-            color: #34495e;
         }
-        .options {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .option-btn {
-            background-color: #ecf0f1;
-            border: 2px solid #bdc3c7;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .option-btn:hover {
-            background-color: #3498db;
-            color: white;
-            border-color: #3498db;
-        }
-        .option-btn:disabled {
-            cursor: not-allowed;
-            opacity: 0.8;
-        }
-        .option-btn.correct {
-            background-color: #2ecc71;
-            color: white;
-            border-color: #2ecc71;
-        }
-        .option-btn.wrong {
-            background-color: #e74c3c;
-            color: white;
-            border-color: #e74c3c;
-        }
-        #next-btn, #restart-btn {
-            background-color: #2c3e50;
-            color: white;
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #4da6ff;
+            color: #1e1e2f;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 1em;
+            border-radius: 5px;
+            font-size: 1.1rem;
             cursor: pointer;
-            margin-top: 20px;
-            display: none;
+            font-weight: bold;
             transition: background-color 0.3s;
         }
-        #next-btn:hover, #restart-btn:hover {
-            background-color: #1a252f;
+        .btn:hover {
+            background-color: #3385ff;
         }
-        .score-board {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #27ae60;
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #555;
+            padding-bottom: 10px;
+        }
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-<div class="quiz-container">
-    <h1>🍎 健康知識小測驗</h1>
-    <div id="quiz-content">
-        <div class="question" id="question-text">題目載入中...</div>
-        <div class="options" id="options-container">
-            </div>
-        <button id="next-btn" onclick="nextQuestion()">下一題</button>
+<div id="game-container">
+    <div id="status-bar" class="hidden">
+        <span id="stage-display">關卡：1 / 4</span>
+        <span id="score-display">偵探積分：0</span>
     </div>
-    
-    <div id="result-content" style="display: none;">
-        <h2>測驗結束！</h2>
-        <p class="score-board">你的得分：<span id="score">0</span> / <span id="total-score">0</span></p>
-        <p id="feedback-message"></p>
-        <button id="restart-btn" onclick="restartQuiz()" style="display: inline-block;">重新測驗</button>
+
+    <div id="intro-screen">
+        <h1>健康偵探：大學生昏迷事件簿</h1>
+        <p class="story-text">
+            系統啟動。你是一名專門調查校園健康危害的「健康偵探」。<br>
+            今日接獲通報，一名大學生在宿舍突然倒地不起。<br>
+            你必須透過現場的蛛絲馬跡，推理出導致他昏迷的健康風險因素。<br>
+            你的決策將決定他是否能獲得正確的救援與後續衛教指導。
+        </p>
+        <button class="btn" onclick="startGame()">開始調查</button>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <h2 id="stage-title"></h2>
+        <div id="story-box" class="story-text"></div>
+        <div id="question-box" class="question-text"></div>
+        <div id="options-box"></div>
+    </div>
+
+    <div id="ending-screen" class="hidden">
+        <h1 id="ending-title"></h1>
+        <div id="ending-text" class="story-text"></div>
+        <button class="btn" onclick="location.reload()">重新調查</button>
     </div>
 </div>
 
 <script>
-    // 題庫設定 (您可以自由新增或修改題目)
-    const quizData = [
+    const stages = [
         {
-            question: "一般成年人每天建議的理想睡眠時間大約是多久？",
-            options: ["4 到 5 小時", "7 到 9 小時", "10 到 12 小時", "看心情決定"],
-            answer: 1 // 正確答案的索引值 (從 0 開始)
+            title: "第一關：勘查現場（飲食與運動）",
+            story: "你進入昏迷學生的宿舍，桌上堆滿了外送紙盒與飲料杯。你開始檢查他的生活軌跡...",
+            questions: [
+                {
+                    q: "你在垃圾桶發現他昨晚的宵夜包裝，身為偵探，你判斷哪種食物最容易造成腸胃負擔並影響隔日精神？",
+                    options: [
+                        { text: "A. 炸雞排與全糖珍珠奶茶", score: 10 },
+                        { text: "B. 無糖優格與燕麥片", score: 0 }
+                    ]
+                },
+                {
+                    q: "檢查他的電腦使用紀錄，發現他經常連續打遊戲超過 6 小時。你應該建議他如何改善久坐行為？",
+                    options: [
+                        { text: "A. 沒關係，年輕人代謝快不用管", score: 0 },
+                        { text: "B. 每 50 分鐘起身活動 10 分鐘", score: 10 }
+                    ]
+                },
+                {
+                    q: "他的抽屜裡有許多提神飲料。關於水分補充，正確的觀念是？",
+                    options: [
+                        { text: "A. 提神飲料含有糖與咖啡因，不可完全取代白開水", score: 10 },
+                        { text: "B. 只要是液體都可以補充水分，喝提神飲料就好", score: 0 }
+                    ]
+                },
+                {
+                    q: "你在角落發現積灰塵的運動鞋。根據衛福部建議，大學生每週應達到多少中度身體活動量才算及格？",
+                    options: [
+                        { text: "A. 偶爾想到再運動即可", score: 0 },
+                        { text: "B. 每週至少 150 分鐘", score: 10 }
+                    ]
+                },
+                {
+                    q: "檢視他近期的外送清單，幾乎都是缺乏蔬菜的便當。長期膳食纖維攝取不足最可能導致什麼問題？",
+                    options: [
+                        { text: "A. 視力減退", score: 0 },
+                        { text: "B. 腸胃道疾病與便秘", score: 10 }
+                    ]
+                }
+            ]
         },
         {
-            question: "下列哪一個是計算 BMI（身體質量指數）的正確公式？",
-            options: ["體重(公斤) ÷ 身高(公尺)", "身高(公分) ÷ 體重(公斤)", "體重(公斤) ÷ 身高(公尺)的平方", "體重(公斤) × 身高(公尺)"],
-            answer: 2
+            title: "第二關：數位足跡（睡眠行為）",
+            story: "你解鎖了他的智慧型手機，查看他的睡眠紀錄與鬧鐘設定，發現作息極度混亂...",
+            questions: [
+                {
+                    q: "他的手機螢幕使用時間顯示，睡前一小時都在滑社群軟體。這會如何影響睡眠？",
+                    options: [
+                        { text: "A. 藍光會抑制褪黑激素分泌，導致難以入睡", score: 10 },
+                        { text: "B. 螢幕光線可以幫助眼睛放鬆", score: 0 }
+                    ]
+                },
+                {
+                    q: "紀錄顯示他經常在凌晨 3 點睡，早上 8 點起床上課。長期睡眠不足 7-9 小時會導致？",
+                    options: [
+                        { text: "A. 免疫力下降、記憶力衰退", score: 10 },
+                        { text: "B. 身體會自動適應，不需要睡那麼多", score: 0 }
+                    ]
+                },
+                {
+                    q: "室友表示，他平日熬夜，假日會連續睡 14 小時「補眠」。這種做法正確嗎？",
+                    options: [
+                        { text: "A. 正確，睡眠時數一週總和夠就好", score: 0 },
+                        { text: "B. 錯誤，會打亂生理時鐘，應保持規律作息", score: 10 }
+                    ]
+                },
+                {
+                    q: "你在桌上發現晚上 9 點購買的特大杯美式咖啡收據。咖啡因代謝通常需要多久？",
+                    options: [
+                        { text: "A. 1 小時以內", score: 0 },
+                        { text: "B. 4 到 6 小時，晚上飲用易導致失眠", score: 10 }
+                    ]
+                },
+                {
+                    q: "他的床位緊鄰走廊且沒有裝窗簾。關於睡眠環境，下列何者為佳？",
+                    options: [
+                        { text: "A. 保持黑暗、安靜與涼爽的環境", score: 10 },
+                        { text: "B. 開著大燈比較有安全感，有助於深層睡眠", score: 0 }
+                    ]
+                }
+            ]
         },
         {
-            question: "根據健康飲食建議，我們每天應攝取充足的水分。一般成年人一天大約需要喝多少水？",
-            options: ["約 500 毫升", "約 1000 毫升", "約 2000-2500 毫升", "約 5000 毫升"],
-            answer: 2
+            title: "第三關：人際訪談（壓力管理）",
+            story: "你找到他的室友與同學進行訪談，試圖了解他近期的心理狀態與壓力源...",
+            questions: [
+                {
+                    q: "同學表示他最近面臨專題報告，經常焦慮到抓頭髮。下列哪種是健康的壓力應對方式？",
+                    options: [
+                        { text: "A. 透過大量抽菸與喝酒來麻痺神經", score: 0 },
+                        { text: "B. 將任務拆解，制定合理的進度計畫", score: 10 }
+                    ]
+                },
+                {
+                    q: "室友提到他最近情緒低落，拒絕所有社交活動。身為偵探，你認為這可能是什麼警訊？",
+                    options: [
+                        { text: "A. 憂鬱傾向或壓力過載的警訊", score: 10 },
+                        { text: "B. 只是單純想安靜，不用過度解讀", score: 0 }
+                    ]
+                },
+                {
+                    q: "當他感到肌肉緊繃、心跳加速時，可以透過哪種生理放鬆技巧來緩解急性壓力？",
+                    options: [
+                        { text: "A. 腹式呼吸法與漸進式肌肉放鬆", score: 10 },
+                        { text: "B. 喝含有高糖分的飲料", score: 0 }
+                    ]
+                },
+                {
+                    q: "他在行事曆上把所有空檔都排滿了社團與打工，不懂得拒絕別人。這反映了什麼問題？",
+                    options: [
+                        { text: "A. 缺乏建立個人界線（Boundaries）的能力", score: 10 },
+                        { text: "B. 這是時間管理大師的表現，非常健康", score: 0 }
+                    ]
+                },
+                {
+                    q: "如果發現他已經出現持續兩週以上的嚴重失眠與負面念頭，應建議他尋求什麼協助？",
+                    options: [
+                        { text: "A. 學校心理諮商中心或身心科醫師", score: 10 },
+                        { text: "B. 去廟裡收驚就好", score: 0 }
+                    ]
+                }
+            ]
         },
         {
-            question: "規律的有氧運動（如慢跑、游泳）對人體的主要好處不包括下列哪一項？",
-            options: ["提升心肺功能", "促進新陳代謝", "增加近視風險", "協助控制體重"],
-            answer: 2
-        },
-        {
-            question: "衛福部國健署推廣的「我的餐盤」中，建議每餐攝取體積最多的食物類別應該是？",
-            options: ["豆魚蛋肉類", "水果類", "全穀雜糧類與蔬菜類", "乳品類"],
-            answer: 2
+            title: "第四關：醫療紀錄（就醫行為）",
+            story: "最後，你打開他的醫藥箱與瀏覽器的搜尋紀錄，確認他在身體不適時的處置方式...",
+            questions: [
+                {
+                    q: "醫藥箱裡有上次感冒沒吃完的抗生素。他搜尋了「喉嚨痛吃舊藥可以嗎」。正確解答是？",
+                    options: [
+                        { text: "A. 只要症狀相似，可以把剩下的抗生素吃完", score: 0 },
+                        { text: "B. 絕對不行，抗生素需由醫師處方且須按療程吃完", score: 10 }
+                    ]
+                },
+                {
+                    q: "搜尋紀錄顯示他曾查詢「胸口刺痛喝符水有效嗎」。面對不明劇痛，正確的就醫行為是？",
+                    options: [
+                        { text: "A. 立即前往急診或撥打 119", score: 10 },
+                        { text: "B. 先嘗試網路上的偏方，無效再看醫生", score: 0 }
+                    ]
+                },
+                {
+                    q: "他之前去診所看診，拿了三天的藥，吃一天覺得好多了就自行停藥。這種行為的風險是？",
+                    options: [
+                        { text: "A. 減少藥物副作用，非常聰明", score: 0 },
+                        { text: "B. 可能導致病情反撲或產生抗藥性", score: 10 }
+                    ]
+                },
+                {
+                    q: "他從來沒有做過健康檢查。大學生應該如何看待定期健檢？",
+                    options: [
+                        { text: "A. 健檢是及早發現隱藏健康風險（如高血壓、高血脂）的關鍵", score: 10 },
+                        { text: "B. 年輕人身體好，等老了再來做健檢就好", score: 0 }
+                    ]
+                },
+                {
+                    q: "總結所有線索，他這次昏倒最可能的原因是「長期忽略健康警訊的多重疊加」。預防勝於治療的基石是？",
+                    options: [
+                        { text: "A. 培養健康素養，具備正確判斷與尋求專業醫療的能力", score: 10 },
+                        { text: "B. 買最好的醫療保險，生病再說", score: 0 }
+                    ]
+                }
+            ]
         }
     ];
 
+    let currentStageIndex = 0;
     let currentQuestionIndex = 0;
     let score = 0;
 
-    const questionText = document.getElementById("question-text");
-    const optionsContainer = document.getElementById("options-container");
-    const nextBtn = document.getElementById("next-btn");
-    const quizContent = document.getElementById("quiz-content");
-    const resultContent = document.getElementById("result-content");
-    const scoreDisplay = document.getElementById("score");
-    const totalScoreDisplay = document.getElementById("total-score");
-    const feedbackMessage = document.getElementById("feedback-message");
-
-    // 載入題目
-    function loadQuestion() {
-        const currentQuizData = quizData[currentQuestionIndex];
-        questionText.textContent = `${currentQuestionIndex + 1}. ${currentQuizData.question}`;
-        
-        // 清空舊選項
-        optionsContainer.innerHTML = "";
-        nextBtn.style.display = "none";
-
-        // 動態產生選項按鈕
-        currentQuizData.options.forEach((option, index) => {
-            const button = document.createElement("button");
-            button.textContent = option;
-            button.classList.add("option-btn");
-            button.onclick = () => selectAnswer(index, button);
-            optionsContainer.appendChild(button);
-        });
+    function startGame() {
+        document.getElementById('intro-screen').classList.add('hidden');
+        document.getElementById('status-bar').classList.remove('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        loadStage();
     }
 
-    // 選擇答案
-    function selectAnswer(selectedIndex, selectedButton) {
-        const currentQuizData = quizData[currentQuestionIndex];
-        const allButtons = optionsContainer.querySelectorAll(".option-btn");
-        
-        // 停用所有按鈕，防止重複點擊
-        allButtons.forEach(btn => btn.disabled = true);
-
-        // 判斷對錯並加上顏色樣式
-        if (selectedIndex === currentQuizData.answer) {
-            selectedButton.classList.add("correct");
-            score++;
-        } else {
-            selectedButton.classList.add("wrong");
-            // 標示出正確答案
-            allButtons[currentQuizData.answer].classList.add("correct");
-        }
-
-        // 顯示「下一題」按鈕
-        nextBtn.style.display = "inline-block";
-    }
-
-    // 進入下一題或結算
-    function nextQuestion() {
-        currentQuestionIndex++;
-        if (currentQuestionIndex < quizData.length) {
-            loadQuestion();
-        } else {
-            showResult();
-        }
-    }
-
-    // 顯示測驗結果
-    function showResult() {
-        quizContent.style.display = "none";
-        resultContent.style.display = "block";
-        scoreDisplay.textContent = score;
-        totalScoreDisplay.textContent = quizData.length;
-
-        // 給予回饋評語
-        const percentage = score / quizData.length;
-        if (percentage === 1) {
-            feedbackMessage.textContent = "太厲害了！你是健康知識大師！🌟";
-        } else if (percentage >= 0.6) {
-            feedbackMessage.textContent = "表現不錯喔！繼續保持健康的生活習慣！💪";
-        } else {
-            feedbackMessage.textContent = "再接再厲！多吸收健康知識對身體很有幫助喔！📚";
-        }
-    }
-
-    // 重新開始測驗
-    function restartQuiz() {
+    function loadStage() {
+        const stage = stages[currentStageIndex];
+        document.getElementById('stage-title').innerText = stage.title;
+        document.getElementById('story-box').innerText = stage.story;
+        document.getElementById('stage-display').innerText = `關卡：${currentStageIndex + 1} / ${stages.length}`;
         currentQuestionIndex = 0;
-        score = 0;
-        resultContent.style.display = "none";
-        quizContent.style.display = "block";
         loadQuestion();
     }
 
-    // 初始化第一題
-    loadQuestion();
+    function loadQuestion() {
+        const stage = stages[currentStageIndex];
+        const question = stage.questions[currentQuestionIndex];
+        
+        document.getElementById('question-box').innerText = `[線索 ${currentQuestionIndex + 1}/5] ${question.q}`;
+        
+        const optionsBox = document.getElementById('options-box');
+        optionsBox.innerHTML = '';
+        
+        question.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = opt.text;
+            btn.onclick = () => selectOption(opt.score);
+            optionsBox.appendChild(btn);
+        });
+    }
 
+    function selectOption(points) {
+        score += points;
+        document.getElementById('score-display').innerText = `偵探積分：${score}`;
+        
+        currentQuestionIndex++;
+        
+        if (currentQuestionIndex < stages[currentStageIndex].questions.length) {
+            loadQuestion();
+        } else {
+            currentStageIndex++;
+            if (currentStageIndex < stages.length) {
+                loadStage();
+            } else {
+                showEnding();
+            }
+        }
+    }
+
+    function showEnding() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('status-bar').classList.add('hidden');
+        document.getElementById('ending-screen').classList.remove('hidden');
+        
+        const endingTitle = document.getElementById('ending-title');
+        const endingText = document.getElementById('ending-text');
+        
+        // 滿分 200，過關標準設定為 120
+        if (score >= 120) {
+            endingTitle.innerText = "結局 A：【真相大白，精準救援】";
+            endingTitle.style.color = "#4dff4d";
+            endingText.innerHTML = `最終得分：${score} 分。<br><br>
+            憑藉你敏銳的判斷與紮實的健康知識，你準確找出了導致他昏迷的核心原因：長期不良飲食、睡眠剝奪、壓力超載以及錯誤的就醫觀念。<br>
+            救護人員根據你的報告，迅速進行了正確的處置。學生康復後，在你的衛教指導下，開始重建健康的生活型態。你成功阻止了一場悲劇。`;
+        } else {
+            endingTitle.innerText = "結局 B：【錯失良機，隱患引爆】";
+            endingTitle.style.color = "#ff4d4d";
+            endingText.innerHTML = `最終得分：${score} 分。<br><br>
+            你的調查方向出現了許多盲點，忽視了關鍵的健康風險訊號。由於未能及時釐清病因，學生雖然被送醫，但因長期累積的慢性問題未得解決，未來仍面臨極高的健康風險。<br>
+            偵探，大學生的健康素養與生活習慣息息相關，請重新檢視你的健康知識庫，再次挑戰。`;
+        }
+    }
 </script>
 
 </body>
