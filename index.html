@@ -64,7 +64,7 @@
     .win-restart {
       position: absolute;
       left: 50%;
-      top: 73%;
+      top: 79%;
       transform: translate(-50%, -50%);
       display: none;
       z-index: 10;
@@ -161,11 +161,9 @@
     .character-card strong { display: block; font-size: 1.45rem; margin-bottom: 6px; }
     .character-card span { display: block; font-size: 0.95rem; line-height: 1.45; color: #4e6b42; }
 
-    /* =========================================
-       手遊級虛擬按鍵 - 強制顯示版 (移除寬度限制)
-       ========================================= */
+    /* 手遊級虛擬按鍵 */
     .mobile-controls {
-      display: flex; /* 改為一律顯示 */
+      display: flex; 
       position: absolute;
       bottom: 30px;
       left: 0;
@@ -203,7 +201,6 @@
     .skill-btn:active { transform: scale(0.88); box-shadow: 0 0 10px rgba(255, 152, 0, 0.8); }
     .skill-icon { font-size: 45px; text-shadow: 0 4px 6px rgba(0,0,0,0.4); }
 
-    /* 因為虛擬按鍵已經常駐，隱藏下方的文字說明避免干擾畫面 */
     .note { display: none; } 
 
     canvas { display: block; width: 100%; height: auto; background: linear-gradient(#7fc8d0, #c8dfaa 45%, #436e35 100%); }
@@ -245,7 +242,7 @@
         <h2>中場休息：健康補給站</h2>
         <p style="font-size:1.2rem;">累計持有金幣：<strong id="shopCoinsDisplay" style="color:#ffd83d;">0</strong></p>
         <div class="shop-items">
-          <button class="shop-btn" id="buyHintBtn">購買：本題提示卡 (2 金幣)</button>
+          <button class="shop-btn" id="buyHintBtn">購買：本題提示卡，屏閉一個錯誤選項 (2 金幣)</button>
           <button class="shop-btn" id="buyMealBtn">購買：高蛋白水煮餐，恢復 1 點生命 (2 金幣)</button>
           <button class="shop-btn" id="buyShieldBtn">購買：一次性防護罩 (2 金幣)</button>
           <button class="shop-btn" id="buyStarRingBtn">購買：星環旋轉特效 (3 金幣)</button>
@@ -269,12 +266,12 @@
           <p>請先選擇角色，再按「開始遊戲」。</p>
           <div class="character-options">
             <button class="character-card" id="selectJayBtn" type="button">
-              <div style="font-size:60px; line-height:120px;">👦</div>
+              <img src="boy.png" alt="小傑">
               <strong>小傑</strong>
               <span>活力跑者，適合節奏快速的健康挑戰。</span>
             </button>
             <button class="character-card" id="selectNanaBtn" type="button">
-              <div style="font-size:60px; line-height:120px;">👧</div>
+              <img src="girl.png" alt="娜娜">
               <strong>娜娜</strong>
               <span>瑜珈女孩，沉著穩定地完成每一道題目。</span>
             </button>
@@ -297,6 +294,15 @@
     const musicBtn = document.getElementById('musicBtn');
     const winRestartBtn = document.getElementById('winRestartBtn');
     
+    // 載入背景圖與角色圖
+    const bgImage = new Image();
+    bgImage.src = 'background.png';
+    const boyImg = new Image();
+    boyImg.src = 'boy.png';
+    const girlImg = new Image();
+    girlImg.src = 'girl.png';
+
+    // 商店 DOM
     const shopModal = document.getElementById('shopModal');
     const shopCoinsDisplay = document.getElementById('shopCoinsDisplay');
     const buyStarRingBtn = document.getElementById('buyStarRingBtn');
@@ -337,11 +343,17 @@
     let hasSprintShoes = false, hasTrail = false, hasStarRing = false;
     let hasHint = false, hasDoubleJump = false, hasMagnet = false;
     
+    // 結算與狀態追蹤
     let timeLeft = 600, lastTimestamp = 0;
     let hitWrongBoxes = new Set(); 
     let floatingTexts = []; 
     let mainCoinDrop = null; 
     let wrongHistory = []; 
+    let hiddenWrongIdx = -1; // 儲存被提示卡屏閉的箱子索引
+    
+    let totalCollectedCoins = 0;
+    let totalWrongDeductions = 0;
+    let timeBonus = 0;
 
     // 下樓按鈕
     const teleportBtn = { x: 40, y: upperPlatformY - 20, w: 60, h: 20 };
@@ -374,14 +386,14 @@
       { question: '吃下了剛發芽的馬鈴薯造成輕微中毒是屬於天然毒素食品中毒。', correct: 0, options: ['O 正確', 'X 錯誤'], explain: '發芽馬鈴薯含有茄鹼，屬於天然毒素。' },
       { question: '用不耐熱塑膠袋裝湯，食用後輕微頭暈是屬於化學性食品中毒。', correct: 0, options: ['O 正確', 'X 錯誤'], explain: '塑膠溶出的有毒物質屬於化學性毒素。' },
       { question: '衛生不佳的餐廳復業後再傳諾羅病毒感染是屬於細菌性食品中毒。', correct: 1, options: ['O 正確', 'X 錯誤'], explain: '諾羅病毒屬於「病毒性」食品中毒。' },
-      { question: '以下有幾項可能是致癌因素？(甲)空氣汙染 (乙)油炸物 (丙)均衡飲食 (丁)經常酗酒', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 共 3 項皆可能是致癌因素。' },
-      { question: '下列有幾項為常見的癌症危險訊號？(甲)血便 (乙)乳房不正常硬塊 (丙)標準體重 (丁)久咳有血', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 皆為癌症危險訊號。' },
+      { question: '以下有幾項可能是致癌因素？A.空氣汙染 B.油炸物 C.均衡飲食 D.經常酗酒', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 共 3 項皆可能是致癌因素。' },
+      { question: '下列有幾項為常見的癌症危險訊號？A.血便 B.乳房不正常硬塊 C.標準體重 D.久咳有血', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 皆為癌症危險訊號。' },
       { question: '以下哪一項生活習慣可能無法預防癌症？', correct: 0, options: ['睡前吃宵夜', '定期健康檢查', '均衡飲食', '規律作息'], explain: '睡前吃宵夜對腸胃負擔大，並非預防癌症的習慣。' },
       { question: '請問以下哪一項不屬於「三高」食物？', correct: 1, options: ['高鹽', '高纖', '高糖', '高脂'], explain: '「三高」指的是高鹽、高糖、高脂，不包含高纖。' },
-      { question: '下列哪幾項為心臟疾病的危險警訊？(甲)心律不整 (乙)皮膚癢 (丙)胸悶 (丁)耳鳴', correct: 1, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)心律不整、(丙)胸悶 是心臟疾病的危險警訊。' },
+      { question: '下列哪幾項為心臟疾病的危險警訊？A.心律不整 B.皮膚癢 C.胸悶 D.耳鳴', correct: 1, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)心律不整、(丙)胸悶 是心臟疾病的危險警訊。' },
       { question: '腦中風可運用FAST原則檢測，何項說明錯誤？', correct: 2, options: ['F是Face', 'A是Arm', 'S是Speed', 'T是Time'], explain: 'S應為Speech (說話口齒不清)。' },
       { question: '請問哪一項不是腎臟功能？', correct: 0, options: ['調節肌肉', '過濾血液', '體液平衡', '調節血壓'], explain: '腎臟主要負責過濾廢物、體液平衡與調節血壓。' },
-      { question: '哪幾項為腎臟病危險警訊？(甲)小便有泡沫 (乙)耳鳴 (丙)下肢水腫 (丁)高血壓', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)泡、(丙)水、(丁)高 皆為腎臟病的危險警訊。' },
+      { question: '哪幾項為腎臟病的危險警訊？ (甲)泡泡尿 (乙)耳鳴　(丙)下肢水腫　(丁)高血壓', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)泡泡尿、(丙)下肢水腫、(丁)高血壓 皆為腎臟病的危險警訊。' },
       { question: '以下何者並非食品添加物的功能？', correct: 1, options: ['延長保存期限', '提升食品價格', '增添食品風味', '節省製作成本'], explain: '食品添加物主要為防腐、保色、調味等，非為提升價格。' },
       { question: '下列哪一項不是健康食品管理法審核通過的保健功效？', correct: 2, options: ['免疫調節', '輔助調節血壓', '預防癌症', '牙齒保健'], explain: '健康食品不能宣稱具有治療或預防疾病(如癌症)的療效。' },
       { question: '要求攤商必須擺放價目表。此舉是維護消費者的何項權利？', correct: 3, options: ['基本需求', '請求賠償', '消費教育', '決定選擇'], explain: '價格透明有助於消費者做出決定選擇。' },
@@ -505,7 +517,9 @@
       
       return opts.map((text, i) => ({
         x: startX + i * (BOX_W + gap), y: gateY - 18, w: BOX_W, h: BOX_H,
-        text, idx: i, removed: gateOpened && i === levels[currentLevel].correct
+        text, idx: i, 
+        // 加入 hiddenWrongIdx 邏輯，若是被提示卡屏閉的選項，則設定為 removed 隱藏起來
+        removed: (gateOpened && i === levels[currentLevel].correct) || (i === hiddenWrongIdx)
       }));
     }
 
@@ -522,18 +536,18 @@
       currentCombo = 0; extraCoins = []; mainCoinDrop = null;
       
       timeLeft = 600; lastTimestamp = performance.now();
+      totalCollectedCoins = 0; totalWrongDeductions = 0; timeBonus = 0;
       
       gateOpened = false; transitionTimer = 0; coinVisible = false; coinCollected = false;
       attempts = 0; correctAnswers = 0; wrongAnswers = 0; lastShopLevel = -1;
       particles.length = 0; trailParticles.length = 0; hazards.length = 0; hazardSpawnTimer = 0;
-      floatingTexts = []; hitWrongBoxes.clear(); wrongHistory = [];
+      floatingTexts = []; hitWrongBoxes.clear(); wrongHistory = []; hiddenWrongIdx = -1;
       
       Object.keys(wrongBoxShake).forEach(key => delete wrongBoxShake[key]);
       setPlayerToGround(); setPopup('頂到正確答案箱，箱子會消失並開通往上一層的路。', 180); updateHud();
     }
 
     function setPlayerToGround() {
-      // 確保每次呼叫都強制回到正中央(x:610)與最底層
       player.x = 610; player.y = groundY - player.h; player.vx = 0; player.vy = 0; player.onGround = true;
     }
 
@@ -612,6 +626,7 @@
     function collectCoin() {
       if (!coinVisible || coinCollected) return;
       coinCollected = true; coinVisible = false; score += 5; gameCoins += 1; 
+      totalCollectedCoins += 1;
       mainCoinDrop = null;
       updateHud(); playCoinSound();
       spawnParticles(610 + 23, upperPlatformY - 62 + 23, '#ffd83d', 26);
@@ -626,6 +641,7 @@
 
       if (!hitWrongBoxes.has(box.idx)) {
         score -= 1;
+        totalWrongDeductions += 1;
         hitWrongBoxes.add(box.idx);
         floatingTexts.push({x: box.x + box.w/2, y: box.y - 20, text: "-1", color: "#ff4444", life: 60});
         updateHud();
@@ -698,7 +714,10 @@
           }
           lives -= 1; playWrongSound(); setPopup(`哎呀！被${h.type.name}砸中了，生命值 -1！`, 60);
           spawnParticles(player.x + player.w/2, player.y + player.h/2, '#ff4444', 10); updateHud();
-          if (lives <= 0) { finished = true; setPopup('體力耗盡，遊戲結束！', 99999); winRestartBtn.classList.add('show'); resetJoystick(); }
+          if (lives <= 0) { 
+            finished = true; timeBonus = 0; 
+            winRestartBtn.classList.add('show'); resetJoystick(); 
+          }
           continue;
         }
         if (h.y > H) hazards.splice(i, 1);
@@ -709,12 +728,9 @@
       currentLevel += 1;
       if (currentLevel >= levels.length) {
         finished = true; 
-        if (timeLeft > 0) {
-            let bonus = Math.floor(timeLeft);
-            score += bonus;
-            setPopup(`恭喜過關！時間剩餘 ${bonus} 秒，轉換為總分！`, 99999);
-        } else {
-            setPopup('恭喜！你已收集到所有金幣，挑戰成功！', 99999); 
+        if (timeLeft > 0 && lives > 0) {
+            timeBonus = Math.floor(timeLeft);
+            score += timeBonus;
         }
         bestScore = Math.max(bestScore, score); localStorage.setItem('healthGameBestScore', String(bestScore));
         winRestartBtn.classList.add('show'); updateHud(); resetJoystick(); return;
@@ -727,9 +743,24 @@
 
     function resumeNextLevelSetup() {
       gateOpened = false; transitionTimer = 0; coinVisible = false; coinCollected = false;
-      hazards.length = 0; extraCoins = []; mainCoinDrop = null; hasHint = false; 
+      hazards.length = 0; extraCoins = []; mainCoinDrop = null; 
       hitWrongBoxes.clear();
       Object.keys(wrongBoxShake).forEach(key => delete wrongBoxShake[key]);
+      
+      // 提示卡邏輯：隨機屏閉一個錯誤選項
+      if (hasHint) {
+        let wrongIndices = [];
+        for (let i = 0; i < levels[currentLevel].options.length; i++) {
+          if (i !== levels[currentLevel].correct) wrongIndices.push(i);
+        }
+        if (wrongIndices.length > 0) {
+          hiddenWrongIdx = wrongIndices[Math.floor(Math.random() * wrongIndices.length)];
+        }
+        hasHint = false; // 消耗提示卡
+      } else {
+        hiddenWrongIdx = -1; // 沒有提示卡則全顯示
+      }
+
       setPlayerToGround(); setPopup('進入下一題。請碰撞出正確答案。', 150); updateHud();
     }
 
@@ -740,7 +771,7 @@
 
       if (hasHint) { buyHintBtn.textContent = '已購買本題提示'; buyHintBtn.disabled = true;
       } else if (gameCoins < 2) { buyHintBtn.textContent = '金幣不足 (需 2 金幣)'; buyHintBtn.disabled = true;
-      } else { buyHintBtn.textContent = '購買：本題提示卡 (2 金幣)'; buyHintBtn.disabled = false; }
+      } else { buyHintBtn.textContent = '購買：本題提示卡，屏閉一個錯誤選項 (2 金幣)'; buyHintBtn.disabled = false; }
       
       if (lives >= 3) { buyMealBtn.textContent = '生命已滿，無須購買'; buyMealBtn.disabled = true;
       } else if (gameCoins < 2) { buyMealBtn.textContent = '金幣不足 (需 2 金幣)'; buyMealBtn.disabled = true;
@@ -773,7 +804,7 @@
 
     buyStarRingBtn.addEventListener('click', () => { if (gameCoins >= 3 && !hasStarRing) { gameCoins -= 3; hasStarRing = true; updateShopUI(); updateHud(); setPopup('獲得星環旋轉特效！', 80); } });
     buyShieldBtn.addEventListener('click', () => { if (gameCoins >= 2 && !player.hasShield) { gameCoins -= 2; player.hasShield = true; updateShopUI(); updateHud(); } });
-    buyHintBtn.addEventListener('click', () => { if (gameCoins >= 2 && !hasHint) { gameCoins -= 2; hasHint = true; updateShopUI(); updateHud(); setPopup(`【通關提示】：${levels[currentLevel].explain}`, 180); } });
+    buyHintBtn.addEventListener('click', () => { if (gameCoins >= 2 && !hasHint) { gameCoins -= 2; hasHint = true; updateShopUI(); updateHud(); setPopup('獲得提示卡！下一題將為你屏閉一個錯誤選項！', 180); } });
     buyMealBtn.addEventListener('click', () => { if (gameCoins >= 2 && lives < 3) { gameCoins -= 2; lives += 1; updateShopUI(); updateHud(); setPopup('享用高蛋白水煮餐，生命值 +1！', 80); } });
     buySprintShoesBtn.addEventListener('click', () => { if (gameCoins >= 4 && !hasSprintShoes) { gameCoins -= 4; hasSprintShoes = true; player.speed = 8.2; updateShopUI(); updateHud(); setPopup('獲得衝刺跑鞋！移動速度大幅提升！', 80); } });
     buyDoubleJumpBtn.addEventListener('click', () => { if (gameCoins >= 5 && !hasDoubleJump) { gameCoins -= 5; hasDoubleJump = true; updateShopUI(); updateHud(); setPopup('獲得二段跳皮靴！空中再按跳躍即可發動！', 80); } });
@@ -784,7 +815,7 @@
 
     function showReviewModal() {
       if (wrongHistory.length === 0) {
-        reviewContent.innerHTML = '<p style="text-align:center; color:#89ff4d; font-size: 1.5rem; font-weight:bold;">太神啦！你全部答對，沒有任何錯題！💯</p>';
+        reviewContent.innerHTML = '<p style="text-align:center; color:#89ff4d; font-size: 1.5rem; font-weight:bold;">太神啦！你沒有任何錯題！💯</p>';
       } else {
         reviewContent.innerHTML = wrongHistory.map((q, i) => `
           <div style="background: rgba(255,255,255,0.1); padding: 12px; margin-bottom: 12px; border-radius: 8px; border-left: 4px solid #ff4444;">
@@ -815,8 +846,9 @@
 
     function getBarrierRects() {
       if (levels.length === 0 || currentLevel >= levels.length) return [];
-      const rects = [], boxes = answerBoxes(), correctIdx = levels[currentLevel].correct, correctBox = boxes[correctIdx];
-      const openGap = gateOpened ? { x: correctBox.x - 8, y: gateY - 6, w: correctBox.w + 16, h: BOX_H + 24 } : null;
+      const rects = [], boxes = answerBoxes(), correctIdx = levels[currentLevel].correct;
+      // 只有當門打開，或是箱子被屏閉時，該空間才會變成可穿透的 openGap
+      const openGap = gateOpened ? { x: boxes[correctIdx].x - 8, y: gateY - 6, w: boxes[correctIdx].w + 16, h: BOX_H + 24 } : null;
       for (const box of boxes) { if (!box.removed) rects.push({ ...box, type: box.idx === correctIdx ? 'correctBox' : 'wrongBox' }); }
       for (let x = 0; x < W; x += BRICK_W) { const brick = { x, y: gateY, w: BRICK_W, h: BRICK_H, type: 'brick' }; const insideOpenedGap = openGap && rectsIntersect(brick, openGap); if (!insideOpenedGap) rects.push(brick); }
       return rects;
@@ -848,7 +880,6 @@
       let cx = c.x + c.w / 2;
       let cy = c.y + c.h / 2;
       
-      // 無視距離與障礙物，平滑緩慢吸向主角
       let speed = 6; 
       let dist = Math.sqrt(Math.pow(px - cx, 2) + Math.pow(py - cy, 2));
       if (dist > 0) {
@@ -886,7 +917,7 @@
         }
         
         if (rectsIntersect(player, c)) {
-          score += 5; gameCoins += 1; updateHud(); playCoinSound();
+          score += 5; gameCoins += 1; totalCollectedCoins += 1; updateHud(); playCoinSound();
           spawnParticles(c.x + c.w / 2, c.y + c.h / 2, '#ffd83d', 26);
           extraCoins.splice(i, 1); 
           if (transitionTimer === 0) checkAllCoinsCollected(); 
@@ -933,16 +964,19 @@
       if (player.x < 0) player.x = 0; if (player.x + player.w > W) player.x = W - player.w;
       player.onGround = false;
 
-      // 下樓機制優化：踩到按鈕直接呼叫 setPlayerToGround 瞬間回城
+      let teleported = false;
       if (player.vy >= 0 && rectsIntersect(player, teleportBtn)) {
         setPlayerToGround();
         setPopup('已傳送回底層！', 60);
+        teleported = true;
       } else if (prevBottom <= groundY && player.y + player.h >= groundY) { 
         player.y = groundY - player.h; player.vy = 0; player.onGround = true; 
       }
 
       resolveBarrierCollision(prev);
-      if (gateOpened && prevBottom <= upperPlatformY && player.y + player.h >= upperPlatformY) { player.y = upperPlatformY - player.h; player.vy = 0; player.onGround = true; }
+      if (!teleported && gateOpened && prevBottom <= upperPlatformY && player.y + player.h >= upperPlatformY) { 
+        player.y = upperPlatformY - player.h; player.vy = 0; player.onGround = true; 
+      }
       
       updateCoinsPhysics();
 
@@ -951,13 +985,17 @@
     }
 
     function drawBackground() {
-      const gradient = ctx.createLinearGradient(0, 0, 0, H);
-      gradient.addColorStop(0, '#73cdd7'); gradient.addColorStop(1, '#334c25');
-      ctx.fillStyle = gradient; ctx.fillRect(0, 0, W, H);
+      if (bgImage.complete && bgImage.naturalWidth > 0) {
+        ctx.drawImage(bgImage, 0, 0, W, H);
+      } else {
+        const gradient = ctx.createLinearGradient(0, 0, 0, H);
+        gradient.addColorStop(0, '#73cdd7'); gradient.addColorStop(1, '#334c25');
+        ctx.fillStyle = gradient; ctx.fillRect(0, 0, W, H);
+      }
     }
 
     function drawVersionLabel() {
-      ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = 'bold 16px "Microsoft JhengHei"'; ctx.textAlign = 'right'; ctx.fillText('v5.3 錯題複習優化版', W - 24, 32); ctx.restore();
+      ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = 'bold 16px "Microsoft JhengHei"'; ctx.textAlign = 'right'; ctx.fillText('v5.6 提示卡修復與人物圖片支援版', W - 24, 32); ctx.restore();
     }
 
     function drawQuestion() {
@@ -975,8 +1013,8 @@
         for (let x = 0; x < W; x += BRICK_W) drawBrick(x, gateY, BRICK_W, BRICK_H); 
         return; 
       }
-      const boxes = answerBoxes(), correctIdx = levels[currentLevel].correct, correctBox = boxes[correctIdx];
-      const openGap = gateOpened ? { x: correctBox.x - 8, y: gateY - 6, w: correctBox.w + 16, h: BOX_H + 24 } : null;
+      const boxes = answerBoxes(), correctIdx = levels[currentLevel].correct;
+      const openGap = gateOpened ? { x: boxes[correctIdx].x - 8, y: gateY - 6, w: boxes[correctIdx].w + 16, h: BOX_H + 24 } : null;
       for (let x = 0; x < W; x += BRICK_W) { const brick = { x, y: gateY, w: BRICK_W, h: BRICK_H }; const insideOpenedGap = openGap && rectsIntersect(brick, openGap); if (!insideOpenedGap) drawBrick(x, gateY, BRICK_W, BRICK_H); }
     }
 
@@ -1069,10 +1107,20 @@
         const pulse = Math.sin(Date.now() / 150) * 2; ctx.beginPath(); ctx.arc(19, 29, 36 + pulse, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(100, 200, 255, 0.8)'; ctx.lineWidth = 3; ctx.stroke(); ctx.fillStyle = 'rgba(100, 200, 255, 0.2)'; ctx.fill();
       }
 
-      const mainColor = selectedCharacter === 'Nana' ? '#e91e63' : '#d93228';
-      const pantsColor = selectedCharacter === 'Nana' ? '#673ab7' : '#244f9a';
-
-      ctx.fillStyle = mainColor; ctx.beginPath(); ctx.ellipse(19, 13, 17, 10, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ffe0c2'; ctx.beginPath(); ctx.arc(21, 25, 12, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = pantsColor; ctx.fillRect(8, 34, 26, 18); ctx.fillRect(6, 50, 10, 8); ctx.fillRect(24, 50, 10, 8); ctx.fillStyle = '#6a3a1f'; ctx.fillRect(7, 56, 12, 4); ctx.fillRect(23, 56, 12, 4); ctx.fillStyle = '#fff'; ctx.fillRect(player.face === 1 ? 25 : 15, 23, 3, 3);
+      let imgToDraw = selectedCharacter === 'Nana' ? girlImg : boyImg;
+      if (imgToDraw.complete && imgToDraw.naturalWidth > 0) {
+        if (player.face === -1) {
+          ctx.scale(-1, 1);
+          ctx.drawImage(imgToDraw, -player.w, 0, player.w, player.h);
+          ctx.scale(-1, 1); 
+        } else {
+          ctx.drawImage(imgToDraw, 0, 0, player.w, player.h);
+        }
+      } else {
+        const mainColor = selectedCharacter === 'Nana' ? '#e91e63' : '#d93228';
+        const pantsColor = selectedCharacter === 'Nana' ? '#673ab7' : '#244f9a';
+        ctx.fillStyle = mainColor; ctx.beginPath(); ctx.ellipse(19, 13, 17, 10, 0, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ffe0c2'; ctx.beginPath(); ctx.arc(21, 25, 12, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = pantsColor; ctx.fillRect(8, 34, 26, 18); ctx.fillRect(6, 50, 10, 8); ctx.fillRect(24, 50, 10, 8); ctx.fillStyle = '#6a3a1f'; ctx.fillRect(7, 56, 12, 4); ctx.fillRect(23, 56, 12, 4); ctx.fillStyle = '#fff'; ctx.fillRect(player.face === 1 ? 25 : 15, 23, 3, 3);
+      }
       
       if (hasStarRing) {
         for (let i = 0; i < numStars; i++) { const angle = time + (i * Math.PI * 2 / numStars); if (Math.sin(angle) > 0) { drawSingleStar(19 + Math.cos(angle) * radiusX, 34 + Math.sin(angle) * radiusY, true); } }
@@ -1088,8 +1136,29 @@
     function drawOverlay() {
       if (running && !finished) return;
       ctx.save();
-      if (finished && lives > 0) {
-        ctx.fillStyle = 'rgba(7, 18, 8, 0.68)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = 'rgba(255, 255, 245, 0.97)'; ctx.fillRect(210, 120, 860, 540); ctx.strokeStyle = '#ffd83d'; ctx.lineWidth = 8; ctx.strokeRect(210, 120, 860, 540); ctx.fillStyle = '#24431a'; ctx.textAlign = 'center'; ctx.font = 'bold 48px "Microsoft JhengHei"'; ctx.fillText('恭喜！通關完成', W / 2, 330); ctx.font = '24px "Microsoft JhengHei"'; ctx.fillText(`最終分數：${score}　最終持有金幣：${gameCoins}`, W / 2, 425); ctx.font = '22px "Microsoft JhengHei"'; ctx.fillText('點擊下方按鈕進行錯題複習', W / 2, 595); ctx.restore(); return;
+      if (finished) {
+        ctx.fillStyle = 'rgba(7, 18, 8, 0.85)'; ctx.fillRect(0, 0, W, H); 
+        ctx.fillStyle = 'rgba(255, 255, 245, 0.97)'; ctx.fillRect(210, 100, 860, 580); 
+        ctx.strokeStyle = '#ffd83d'; ctx.lineWidth = 8; ctx.strokeRect(210, 100, 860, 580); 
+        ctx.fillStyle = '#24431a'; ctx.textAlign = 'center'; 
+        
+        ctx.font = 'bold 48px "Microsoft JhengHei"'; 
+        ctx.fillText(lives > 0 ? '恭喜！通關完成' : '體力耗盡，遊戲結束', W / 2, 180); 
+        
+        ctx.font = '26px "Microsoft JhengHei"'; 
+        ctx.fillText(`答對 ${correctAnswers} 題： +${correctAnswers * 3} 分`, W / 2, 260);
+        ctx.fillText(`收集 ${totalCollectedCoins} 枚金幣： +${totalCollectedCoins * 5} 分`, W / 2, 310);
+        ctx.fillText(`答錯 ${totalWrongDeductions} 次： -${totalWrongDeductions} 分`, W / 2, 360);
+        ctx.fillText(`時間剩餘 ${Math.floor(timeLeft)} 秒： +${timeBonus} 分`, W / 2, 410);
+        
+        ctx.font = 'bold 36px "Microsoft JhengHei"';
+        ctx.fillStyle = '#e91e63';
+        ctx.fillText(`最終結算總分：${score}`, W / 2, 480);
+        
+        ctx.font = '22px "Microsoft JhengHei"'; 
+        ctx.fillStyle = '#24431a';
+        ctx.fillText('點擊下方按鈕進行錯題複習，或重新開始', W / 2, 560); 
+        ctx.restore(); return;
       }
       ctx.fillStyle = 'rgba(10,16,8,0.52)'; ctx.fillRect(0, 0, W, H); ctx.fillStyle = 'rgba(255,255,255,0.94)'; ctx.fillRect(260, 255, 760, 230); ctx.strokeStyle = '#78c952'; ctx.lineWidth = 5; ctx.strokeRect(260, 255, 760, 230); ctx.fillStyle = '#24431a'; ctx.textAlign = 'center'; ctx.font = 'bold 40px "Microsoft JhengHei"'; ctx.fillText(finished ? '遊戲結束' : '跳跳跳健康問答', W / 2, 330); ctx.font = '24px "Microsoft JhengHei"'; ctx.fillText(finished ? `最終分數：${score}` : '碰撞正確答案，消除箱子並跳上下一層', W / 2, 378); ctx.fillText(finished ? '點擊下方按鈕進行錯題複習' : '按上方「開始遊戲」開始', W / 2, 420); ctx.restore();
     }
