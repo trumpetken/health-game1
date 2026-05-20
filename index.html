@@ -349,7 +349,7 @@
     let floatingTexts = []; 
     let mainCoinDrop = null; 
     let wrongHistory = []; 
-    let hiddenWrongIdx = -1; // 儲存被提示卡屏閉的箱子索引
+    let hiddenWrongIdx = -1; 
     
     let totalCollectedCoins = 0;
     let totalWrongDeductions = 0;
@@ -386,11 +386,11 @@
       { question: '吃下了剛發芽的馬鈴薯造成輕微中毒是屬於天然毒素食品中毒。', correct: 0, options: ['O 正確', 'X 錯誤'], explain: '發芽馬鈴薯含有茄鹼，屬於天然毒素。' },
       { question: '用不耐熱塑膠袋裝湯，食用後輕微頭暈是屬於化學性食品中毒。', correct: 0, options: ['O 正確', 'X 錯誤'], explain: '塑膠溶出的有毒物質屬於化學性毒素。' },
       { question: '衛生不佳的餐廳復業後再傳諾羅病毒感染是屬於細菌性食品中毒。', correct: 1, options: ['O 正確', 'X 錯誤'], explain: '諾羅病毒屬於「病毒性」食品中毒。' },
-      { question: '以下有幾項可能是致癌因素？A.空氣汙染 B.油炸物 C.均衡飲食 D.經常酗酒', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 共 3 項皆可能是致癌因素。' },
-      { question: '下列有幾項為常見的癌症危險訊號？A.血便 B.乳房不正常硬塊 C.標準體重 D.久咳有血', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 皆為癌症危險訊號。' },
+      { question: '有幾項可能是致癌因素？甲.空氣汙染 乙.油炸物 丙.均衡飲食 丁.經常酗酒', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 共 3 項皆可能是致癌因素。' },
+      { question: '有幾項為癌症危險訊號？甲.血便 乙.乳房不正常硬塊 丙.標準體重 丁.久咳有血', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)、(乙)、(丁) 皆為癌症危險訊號。' },
       { question: '以下哪一項生活習慣可能無法預防癌症？', correct: 0, options: ['睡前吃宵夜', '定期健康檢查', '均衡飲食', '規律作息'], explain: '睡前吃宵夜對腸胃負擔大，並非預防癌症的習慣。' },
       { question: '請問以下哪一項不屬於「三高」食物？', correct: 1, options: ['高鹽', '高纖', '高糖', '高脂'], explain: '「三高」指的是高鹽、高糖、高脂，不包含高纖。' },
-      { question: '下列哪幾項為心臟疾病的危險警訊？A.心律不整 B.皮膚癢 C.胸悶 D.耳鳴', correct: 1, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)心律不整、(丙)胸悶 是心臟疾病的危險警訊。' },
+      { question: '下列哪幾項為心臟疾病的危險警訊？甲.心律不整 乙.皮膚癢 丙.胸悶 丁.耳鳴', correct: 1, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)心律不整、(丙)胸悶 是心臟疾病的危險警訊。' },
       { question: '腦中風可運用FAST原則檢測，何項說明錯誤？', correct: 2, options: ['F是Face', 'A是Arm', 'S是Speed', 'T是Time'], explain: 'S應為Speech (說話口齒不清)。' },
       { question: '請問哪一項不是腎臟功能？', correct: 0, options: ['調節肌肉', '過濾血液', '體液平衡', '調節血壓'], explain: '腎臟主要負責過濾廢物、體液平衡與調節血壓。' },
       { question: '哪幾項為腎臟病的危險警訊？ (甲)泡泡尿 (乙)耳鳴　(丙)下肢水腫　(丁)高血壓', correct: 2, options: ['1 項', '2 項', '3 項', '4 項'], explain: '(甲)泡泡尿、(丙)下肢水腫、(丁)高血壓 皆為腎臟病的危險警訊。' },
@@ -518,7 +518,6 @@
       return opts.map((text, i) => ({
         x: startX + i * (BOX_W + gap), y: gateY - 18, w: BOX_W, h: BOX_H,
         text, idx: i, 
-        // 加入 hiddenWrongIdx 邏輯，若是被提示卡屏閉的選項，則設定為 removed 隱藏起來
         removed: (gateOpened && i === levels[currentLevel].correct) || (i === hiddenWrongIdx)
       }));
     }
@@ -588,9 +587,9 @@
       
       floatingTexts.push({x: box.x + box.w/2, y: box.y - 20, text: "+3", color: "#89ff4d", life: 60});
 
-      if (currentCombo > 0 && currentCombo % 10 === 0) {
-        spawnExtraCoins(3);
-        setPopup(`【連擊！】${levels[currentLevel].explain} 噴出額外金幣，請收集「所有金幣」過關！`, 220);
+      if (currentCombo > 0 && currentCombo % 5 === 0) { // 改為每 5 題觸發
+        spawnExtraCoins(2); // 改為噴發 2 枚金幣
+        setPopup(`【連擊！】${levels[currentLevel].explain} 噴出 2 枚額外金幣，請收集過關！`, 220);
         playCorrectSound(); setTimeout(playCoinSound, 150); 
       } else {
         setPopup(`答對了！${levels[currentLevel].explain} 請撿取金幣進入下一題。`, 180);
@@ -747,7 +746,6 @@
       hitWrongBoxes.clear();
       Object.keys(wrongBoxShake).forEach(key => delete wrongBoxShake[key]);
       
-      // 提示卡邏輯：隨機屏閉一個錯誤選項
       if (hasHint) {
         let wrongIndices = [];
         for (let i = 0; i < levels[currentLevel].options.length; i++) {
@@ -756,9 +754,9 @@
         if (wrongIndices.length > 0) {
           hiddenWrongIdx = wrongIndices[Math.floor(Math.random() * wrongIndices.length)];
         }
-        hasHint = false; // 消耗提示卡
+        hasHint = false; 
       } else {
-        hiddenWrongIdx = -1; // 沒有提示卡則全顯示
+        hiddenWrongIdx = -1; 
       }
 
       setPlayerToGround(); setPopup('進入下一題。請碰撞出正確答案。', 150); updateHud();
@@ -847,7 +845,6 @@
     function getBarrierRects() {
       if (levels.length === 0 || currentLevel >= levels.length) return [];
       const rects = [], boxes = answerBoxes(), correctIdx = levels[currentLevel].correct;
-      // 只有當門打開，或是箱子被屏閉時，該空間才會變成可穿透的 openGap
       const openGap = gateOpened ? { x: boxes[correctIdx].x - 8, y: gateY - 6, w: boxes[correctIdx].w + 16, h: BOX_H + 24 } : null;
       for (const box of boxes) { if (!box.removed) rects.push({ ...box, type: box.idx === correctIdx ? 'correctBox' : 'wrongBox' }); }
       for (let x = 0; x < W; x += BRICK_W) { const brick = { x, y: gateY, w: BRICK_W, h: BRICK_H, type: 'brick' }; const insideOpenedGap = openGap && rectsIntersect(brick, openGap); if (!insideOpenedGap) rects.push(brick); }
@@ -899,7 +896,9 @@
           mainCoinDrop.x += mainCoinDrop.vx; mainCoinDrop.y += mainCoinDrop.vy;
         } else if (!mainCoinDrop.landed) {
           mainCoinDrop.vy += 0.5; mainCoinDrop.x += mainCoinDrop.vx; mainCoinDrop.y += mainCoinDrop.vy;
-          if (mainCoinDrop.x < 0) { mainCoinDrop.x = 0; mainCoinDrop.vx *= -0.6; } if (mainCoinDrop.x + mainCoinDrop.w > W) { mainCoinDrop.x = W - mainCoinDrop.w; mainCoinDrop.vx *= -0.6; }
+          // 防下樓按鈕區金幣掉入
+          if (mainCoinDrop.x < 120) { mainCoinDrop.x = 120; mainCoinDrop.vx *= -0.6; } 
+          if (mainCoinDrop.x + mainCoinDrop.w > W) { mainCoinDrop.x = W - mainCoinDrop.w; mainCoinDrop.vx *= -0.6; }
           if (mainCoinDrop.y + mainCoinDrop.h >= upperPlatformY) { mainCoinDrop.y = upperPlatformY - mainCoinDrop.h; mainCoinDrop.vy *= -0.5; mainCoinDrop.vx *= 0.8; if (Math.abs(mainCoinDrop.vy) < 1.5) { mainCoinDrop.vy = 0; mainCoinDrop.vx = 0; mainCoinDrop.landed = true; } }
         }
         if (rectsIntersect(player, mainCoinDrop)) collectCoin();
@@ -912,7 +911,9 @@
           c.x += c.vx; c.y += c.vy;
         } else if (!c.landed) {
           c.vy += 0.5; c.x += c.vx; c.y += c.vy;
-          if (c.x < 0) { c.x = 0; c.vx *= -0.6; } if (c.x + c.w > W) { c.x = W - c.w; c.vx *= -0.6; }
+          // 防下樓按鈕區金幣掉入
+          if (c.x < 120) { c.x = 120; c.vx *= -0.6; } 
+          if (c.x + c.w > W) { c.x = W - c.w; c.vx *= -0.6; }
           if (c.y + c.h >= c.targetY) { c.y = c.targetY - c.h; c.vy *= -0.5; c.vx *= 0.8; if (Math.abs(c.vy) < 1.5) { c.vy = 0; c.vx = 0; c.landed = true; } }
         }
         
@@ -995,7 +996,7 @@
     }
 
     function drawVersionLabel() {
-      ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = 'bold 16px "Microsoft JhengHei"'; ctx.textAlign = 'right'; ctx.fillText('v5.6 提示卡修復與人物圖片支援版', W - 24, 32); ctx.restore();
+      ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.font = 'bold 16px "Microsoft JhengHei"'; ctx.textAlign = 'right'; ctx.fillText('v5.7 連擊與防干擾優化版', W - 24, 32); ctx.restore();
     }
 
     function drawQuestion() {
